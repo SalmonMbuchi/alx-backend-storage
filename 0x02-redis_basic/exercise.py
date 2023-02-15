@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 """Writing strings to Redis"""
 import redis
+from functools import wraps
 from typing import Any, Callable, Optional, Union
 from uuid import uuid4
+
+
+def count_calls(method: Callable) -> Callable:
+    """Count the no. of times a method is called"""
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        key = method.__qualname__
+        self._redis.incr(key)
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class Cache:
@@ -14,22 +25,30 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     def store(self, data: Union[bytes, str, int, float]) -> str:
         """generates a random key, stores data using it and returns it"""
         key = str(uuid4())
         self._redis.set(key, data)
         return key
 
-    def get(self, key: str, fn: Callable[[Any], Any]) -> Any:
+    def get(self, key: str, fn: Optional[Callable] = None) -> Union[str, bytes, int, float]:
         """uses the callable to convert the data to original type"""
         data = self._redis.get(key)
-        if data:
-            return fn(data)
+        if fn:
+            data = fn(data)
+        return data
 
-    def get_str(self, data: bytes) -> str:
+    def get_str(self, key: str) -> str:
         """Convert to string"""
+        data = self._redis.get(key)
         return data.decode("utf-8")
 
-    def get_int(self, data: bytes) -> int:
+    def get_int(self, key: str) -> int:
         """convert to int"""
-        return int.from_bytes(data, 'big')
+        data = self._redis.get(key)
+        try:
+            data = int(data.decode('utf-8'))
+        except Exception:
+            data = 0
+        return data
