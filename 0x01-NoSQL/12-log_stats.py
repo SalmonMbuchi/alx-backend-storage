@@ -8,7 +8,8 @@ if __name__ == '__main__':
     client = MongoClient('mongodb://127.0.0.1:27017')
     # connect to logs database and nginx collection
     collection = client.logs.nginx
-    print(f'{collection.estimated_document_count()} logs')
+    # print(f'{collection.estimated_document_count()} logs')
+    print(f'{collection.count_documents({})} logs')
     get = collection.count_documents({'method': 'GET'})
     post = collection.count_documents({'method': 'POST'})
     put = collection.count_documents({'method': 'PUT'})
