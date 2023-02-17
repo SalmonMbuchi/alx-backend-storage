@@ -4,9 +4,13 @@
 
 def top_students(mongo_collection):
     """returns all students sorted by average"""
-    total_avg = {}
-    for student in mongo_collection.find():
-        average = student.topics.score / 3
-        total_avg["averageScore"] = average
-    total_avg = {key: val for key, val in sorted(total_avg.items())}
-    return total_avg
+    top_student = mongo_collection.aggregate([
+        {
+            "$project": {
+                "name": "$name",
+                "averageScore": {"$avg": "$topics.score"}
+            }
+        },
+        {"$sort": {"averageScore": -1}}
+    ])
+    return top_student
