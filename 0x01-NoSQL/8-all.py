@@ -8,5 +8,5 @@ def list_all(mongo_collection):
     for obj in mongo_collection.find():
         if obj is None:
             return []
-        myList.append(obj)     
+        myList.append(obj)
     return myList
